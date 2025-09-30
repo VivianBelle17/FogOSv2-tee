@@ -15,53 +15,42 @@ int main(int argc, char *argv[]){
 	}
 
 
-	char data[16];
+	char data[256];
 	int bytesToRead;
-
+	int output;
+	struct stat st;
+	int offset;
 
 	while((bytesToRead = read(0, data, sizeof(data))) > 0){
 		
 		// Writing to the terminal
 		write(1, data, bytesToRead);
-
-		// Writing to a file
-		//write(output, data, bytesToRead);
 		
+		// Writing to multiple files
 		for(int i = 1; i < argc; i++){
 
-			// Opening file. Create if it doesn't exists and write to it
-			int output = open(argv[i], O_CREATE | O_WRONLY);
-			
-			if(output < 0){
-				printf("Error in opening file\n");
+			if(strcmp(argv[i], "-a") == 0){
+				i++;
+				output = open(argv[i], O_CREATE | O_RDWR);
+				
+				fstat(output, &st);
+				offset = st.size;
+				
+				seek(output, offset);
+			} else {
+				// Opening file. Create if it doesn't exists, empty it, and write to it
+				output = open(argv[i], O_CREATE | O_WRONLY | O_TRUNC);	
 			}
-
-			// Writing to a file
 			write(output, data, bytesToRead);
+			// Writing to a file
+			if(bytesToRead > 0 && data[bytesToRead - 1] != '\n'){
+				// Writing a new line to the file and to the terminal if the user used stdin
+				write(output, "\n", 1);
+				write(1, "\n", 1);
+			}
 			close(output);
 		}
 	}
-	//bytesToRead is still 0 so it doesn't go in the while loop the second time around
-	// while loop first, then outside of it the for loop thats writing to the files
-        
-	// Handles multiple files
-	
-	
-	//for(int i = 1; i < argc; i++){
-
-		// Opening file. Create if it doesn't exists and write to it
-	//	int output = open(argv[i], O_CREATE | O_WRONLY);
-	//	if(output < 0){
-	//		printf("Error in opening file\n");
-	//	}
-
-		// Writing to a file
-	//	write(output, data, bytesToRead);
-	//	close(output);
-	//}
-
-	//close(output);
 
 	return 0;
-
 }
