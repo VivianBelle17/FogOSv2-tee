@@ -17,39 +17,76 @@ int main(int argc, char *argv[]){
 
 	char data[256];
 	int bytesToRead;
-	int output;
+	//int output;
 	struct stat st;
 	int offset;
+	int append = 0;
+	int fds[10];
+	int fd_count = 0;
+	int flags = 0;
+	int file_start;
+
+	if(strcmp(argv[1], "-a") == 0){
+		append = 1;
+		flags = O_CREATE | O_RDWR;
+		
+		// For starting at the correct file when opening them
+		file_start = 2;
+
+	} else {
+		flags = O_CREATE | O_WRONLY | O_TRUNC;
+		
+		// For starting at correct file
+		file_start = 1;
+	}
+
+	for(int i = file_start; i < argc; i++){
+		
+		// [i - file_start]: open the files at fds[0] instead; empty slot(s) at fds[0] since i would start at 1 or 2
+		fds[i - file_start] = open(argv[i], flags);
+		fd_count++;
+		
+		if(fds[i - file_start] < 0){
+			printf("Error in opening file: %s\n", argv[i]);
+		}
+	}
+		
+		
 
 	while((bytesToRead = read(0, data, sizeof(data))) > 0){
-		
+				
 		// Writing to the terminal
 		write(1, data, bytesToRead);
-		
-		// Writing to multiple files
-		for(int i = 1; i < argc; i++){
 
-			if(strcmp(argv[i], "-a") == 0){
-				i++;
-				output = open(argv[i], O_CREATE | O_RDWR);
-				
-				fstat(output, &st);
+		// Writing to files
+		for(int i = 0; i < fd_count; i++){
+
+			if(append == 1) {
+
+				printf("did we get here?\n");
+
+				// Appending logic
+				fstat(fds[i], &st);	// Get the file's information
 				offset = st.size;
 				
-				seek(output, offset);
-			} else {
-				// Opening file. Create if it doesn't exists, empty it, and write to it
-				output = open(argv[i], O_CREATE | O_WRONLY | O_TRUNC);	
+				printf("offset: %d\n", offset);
+				seek(fds[i], offset);	// Move the write pointer to the end of the file
 			}
-			write(output, data, bytesToRead);
-			// Writing to a file
+
+			// Writing to the file
+			write(fds[i], data, bytesToRead);
+			
+			// Writing a newline at the end of the file
 			if(bytesToRead > 0 && data[bytesToRead - 1] != '\n'){
-				// Writing a new line to the file and to the terminal if the user used stdin
-				write(output, "\n", 1);
+				write(fds[i], "\n", 1);
 				write(1, "\n", 1);
 			}
-			close(output);
 		}
+	}
+
+	// Closing files
+	for(int i = 0; i < fd_count; i++){
+		close(fds[i]);
 	}
 
 	return 0;
