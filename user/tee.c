@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[]){
 
-	char data[256];
+	char data[512];
 	int bytesToRead;
 	struct stat st;
 	int offset;
