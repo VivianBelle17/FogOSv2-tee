@@ -10,14 +10,8 @@
 
 int main(int argc, char *argv[]){
 
-	for(int i = 0; i < argc; i++){
-		printf("%d: %s\n", i, argv[i]);
-	}
-
-
 	char data[256];
 	int bytesToRead;
-	//int output;
 	struct stat st;
 	int offset;
 	int append = 0;
@@ -62,14 +56,11 @@ int main(int argc, char *argv[]){
 		for(int i = 0; i < fd_count; i++){
 
 			if(append == 1) {
-
-				printf("did we get here?\n");
-
+				
 				// Appending logic
 				fstat(fds[i], &st);	// Get the file's information
 				offset = st.size;
 				
-				printf("offset: %d\n", offset);
 				seek(fds[i], offset);	// Move the write pointer to the end of the file
 			}
 
